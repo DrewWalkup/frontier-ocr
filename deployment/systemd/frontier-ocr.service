@@ -1,0 +1,36 @@
+[Unit]
+Description=Frontier OCR API
+After=network.target
+
+[Service]
+# START CONFIGURATION
+# User to run the service as (change this to your user, e.g., ubuntu)
+User=ubuntu
+Group=ubuntu
+
+# Path to the project root (change this to your project path)
+WorkingDirectory=/home/ubuntu/frontier-ocr
+# END CONFIGURATION
+
+# Environment variables
+# Uncomment and set these if you want to override defaults
+# Environment="OCR_PORT=8000"
+# Environment="OCR_HOST=0.0.0.0"
+# Environment="OCR_LOG_LEVEL=INFO"
+# Environment="OCR_DEVICE=gpu:0"
+
+# Command to start the server
+# We use 'uv run' to ensure we use the project's virtual environment dependencies
+ExecStart=/home/ubuntu/.cargo/bin/uv run frontier-ocr --host 0.0.0.0 --port 8000
+
+# Restart policy
+Restart=always
+RestartSec=3
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=frontier-ocr
+
+[Install]
+WantedBy=multi-user.target

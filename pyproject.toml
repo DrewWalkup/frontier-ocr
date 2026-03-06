@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "frontier-ocr"
+version = "0.1.0"
+description = "A backend-agnostic FastAPI OCR service with optional provider extras"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+authors = [
+    { name = "Frontier OCR contributors" },
+]
+keywords = ["ocr", "fastapi", "paddleocr", "document-ai"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "fastapi>=0.128.0",
+    "pydantic-settings>=2.12.0",
+    "pypdf>=6.6.0",
+    "python-multipart>=0.0.21",
+    "uvicorn>=0.40.0",
+    "numpy<2.0",
+]
+
+[project.optional-dependencies]
+paddle = [
+    "paddleocr>=3.3.2",
+    "paddlex[ocr]>=3.3.6",
+    "safetensors>=0.7.0",
+]
+deepseek = []
+all = [
+    "paddleocr>=3.3.2",
+    "paddlex[ocr]>=3.3.6",
+    "safetensors>=0.7.0",
+]
+dev = [
+    "build>=1.2.2",
+    "httpx>=0.28.1",
+    "pytest>=8.3.5",
+    "ruff>=0.14.11",
+]
+
+[project.scripts]
+frontier-ocr = "frontier_ocr.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["frontier_ocr*"]
