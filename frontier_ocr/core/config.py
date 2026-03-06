@@ -42,21 +42,38 @@ class Settings(BaseSettings):
     paddle_vl_rec_backend: str | None = Field(default=None)
     paddle_vl_rec_server_url: str | None = Field(default=None)
 
+    @staticmethod
+    def _normalize_optional_string(value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        normalized = value.strip()
+        if not normalized:
+            return None
+
+        return normalized
+
     @property
     def resolved_paddle_device(self) -> str:
         return self.paddle_device or self.device
 
     @property
     def resolved_paddle_vl_rec_model_dir(self) -> str | None:
-        return self.paddle_vl_rec_model_dir or self.vl_rec_model_dir
+        return self._normalize_optional_string(
+            self.paddle_vl_rec_model_dir
+        ) or self._normalize_optional_string(self.vl_rec_model_dir)
 
     @property
     def resolved_paddle_vl_rec_backend(self) -> str | None:
-        return self.paddle_vl_rec_backend or self.vl_rec_backend
+        return self._normalize_optional_string(
+            self.paddle_vl_rec_backend
+        ) or self._normalize_optional_string(self.vl_rec_backend)
 
     @property
     def resolved_paddle_vl_rec_server_url(self) -> str | None:
-        return self.paddle_vl_rec_server_url or self.vl_rec_server_url
+        return self._normalize_optional_string(
+            self.paddle_vl_rec_server_url
+        ) or self._normalize_optional_string(self.vl_rec_server_url)
 
 
 settings = Settings()
