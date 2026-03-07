@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     paddle_vl_rec_model_dir: str | None = Field(default=None)
     paddle_vl_rec_backend: str | None = Field(default=None)
     paddle_vl_rec_server_url: str | None = Field(default=None)
+    paddle_max_requests_before_reload: int = Field(default=0)
 
     @staticmethod
     def _normalize_optional_string(value: str | None) -> str | None:

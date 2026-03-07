@@ -6,7 +6,7 @@ import time
 from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Iterator, cast
+from typing import TYPE_CHECKING, Any, Iterator
 
 from frontier_ocr.models.ocr_models import OcrPageResult, OcrResponse
 from frontier_ocr.services import BackendUnavailableError, OcrBackend
@@ -38,6 +38,8 @@ class PaddleOcrVlService(OcrBackend):
         self._loading_lock = threading.Lock()
         self._last_accessed_time: float = 0.0
         self._unload_timeout: float = 300.0  # 5 minutes
+        self._request_count: int = 0
+        self._max_requests_before_reload: int = 0  # 0 = disabled
 
         # Start background thread for auto-unloading
         self._stop_event = threading.Event()
@@ -49,7 +51,11 @@ class PaddleOcrVlService(OcrBackend):
     @classmethod
     def from_settings(cls, settings: Settings) -> PaddleOcrVlService:
         """Create a service instance from application settings."""
-        return cls(settings=settings)
+        service = cls(settings=settings)
+        service._max_requests_before_reload = (
+            settings.paddle_max_requests_before_reload
+        )
+        return service
 
     def is_available(self) -> bool:
         """Return True when Paddle runtime dependencies are importable."""
@@ -151,6 +157,7 @@ class PaddleOcrVlService(OcrBackend):
 
             logger.info("Unloading PaddleOCR-VL model...")
             self._pipeline = None
+            self._request_count = 0
 
             # Force garbage collection and clear GPU memory
             import gc
@@ -162,7 +169,7 @@ class PaddleOcrVlService(OcrBackend):
                 if paddle.device.is_compiled_with_cuda():
                     paddle.device.cuda.empty_cache()
             except Exception:
-                pass  # GPU memory clearing is best-effort
+                logger.debug("GPU cache clearing skipped or failed", exc_info=True)
 
             logger.info("PaddleOCR-VL model unloaded.")
 
@@ -251,12 +258,25 @@ class PaddleOcrVlService(OcrBackend):
                 self._unload_pipeline()
                 raise
 
+            self._request_count += 1
+
+            if (
+                self._max_requests_before_reload > 0
+                and self._request_count >= self._max_requests_before_reload
+            ):
+                logger.info(
+                    "Reached %d requests, scheduling pipeline reload",
+                    self._request_count,
+                )
+                self._unload_pipeline()
+
         elapsed_seconds = time.perf_counter() - start_time
         logger.info(
-            "OCR completed for %s (%d pages) in %.2fs",
+            "OCR completed for %s (%d pages) in %.2fs [request %d since reload]",
             original_filename,
             len(page_results),
             elapsed_seconds,
+            self._request_count,
         )
 
         return OcrResponse(
